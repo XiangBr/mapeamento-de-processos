@@ -19,20 +19,20 @@ A informação do cliente é digitada três vezes (planilha de leads, Promob, Co
 
 1. **Pede orçamento** (Cliente, WhatsApp)
 2. **Registra o contato** (Comercial, Planilha de leads)
-   Leva 5 min. Copia e cola na mão. Às vezes esquece e o lead some.
+   Tempo: 5 min. Copia e cola na mão. Às vezes esquece e o lead some.
 3. **Agenda a medição** (Comercial, WhatsApp)
-   Leva 1 a 3 dias de troca de mensagem. A troca de mensagem pra achar horário leva até 3 dias.
+   Tempo: 1 a 3 dias de troca de mensagem. A troca de mensagem pra achar horário leva até 3 dias.
 4. **Mede o ambiente** (Projetista, Caderno)
-   Leva 1h30 no local.
+   Tempo: 1h30 no local.
 5. **Desenha o projeto** (Projetista, Promob)
-   Leva 1 a 2 dias. Na primeira vez entra sem pedido de ajuste. O pedido de ajuste só existe quando o cliente volta do passo 8.
+   Tempo: 1 a 2 dias. Na primeira vez entra sem pedido de ajuste. O pedido de ajuste só existe quando o cliente volta do passo 8.
 6. **Calcula o preço** (Financeiro, Planilha de custos)
    Não se sabe quanto tempo leva. Ninguém soube dizer com que frequência a tabela de chapa é atualizada, nem quanto tempo o cálculo leva.
 7. **Apresenta a proposta** (Comercial, WhatsApp)
 8. **Aprova?** (Cliente)
    Se sim, vai pro passo 9 (Emite contrato e cobra o sinal). Se pede ajuste, vai pro passo 5 (Desenha o projeto) (regra R5). Se não, vai pro passo 11 (Marca como perdido).
 9. **Emite contrato e cobra o sinal** (Financeiro, Conta Azul)
-   Leva 1 dia. Redigita no Conta Azul os dados do cliente que já estavam na planilha de leads.
+   Tempo: 1 dia. Redigita no Conta Azul os dados do cliente que já estavam na planilha de leads.
 10. **Libera pra produção** (Projetista, Promob)
 11. **Marca como perdido** (Comercial, Planilha de leads)
     O motivo da perda não é registrado.

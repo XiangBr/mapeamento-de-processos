@@ -64,7 +64,7 @@ function montar(p) {
     const corpo = [];
     if (s.descricao) corpo.push(s.descricao);
     if (s.tempo === "?") corpo.push("Não se sabe quanto tempo leva.");
-    else if (s.tempo) corpo.push(`Leva ${s.tempo}.`);
+    else if (s.tempo) corpo.push(`Tempo: ${s.tempo}.`);
     if (s.nota) corpo.push(s.nota);
     if (s.tipo === "decisao" || s.proximo.length > 1) {
       for (const prox of s.proximo) {

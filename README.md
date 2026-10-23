@@ -21,7 +21,7 @@ Antes de colocar I.A. ou um agente pra fazer parte de um trabalho, você precisa
    - **Regras:** as regras de negócio, com as que não estão confirmadas em destaque.
    - **Ferramentas:** o que passa de uma ferramenta pra outra e como cada uma pode ser acessada.
 
-6. **Desenha no Excalidraw** o mesmo fluxo, no traço de quadro branco, e gera um link curto que abre direto no excalidraw.com. Bom pra discutir com o time e rabiscar por cima.
+6. **Monta um quadro no Excalidraw**: o mesmo fluxo, no traço de quadro branco, com painéis de diagnóstico, requisitos, regras, sistemas, lacunas e automação embaixo, e gera um link curto que abre direto no excalidraw.com. Bom pra discutir com o time e rabiscar por cima.
 
 Os diagramas abrem com um clique. Você edita e salva onde quiser: Google Drive, OneDrive, GitHub ou no computador.
 

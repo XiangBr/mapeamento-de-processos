@@ -21,17 +21,17 @@ Duas regras seguram o processo e nenhuma está escrita: quando a compra fora do 
 2. **Pede por áudio** (Mestre de obras, WhatsApp)
    Áudio sem quantidade exata nem especificação. O engenheiro liga de volta pra confirmar.
 3. **Confere com o orçamento** (Engenheiro, Planilha de orçamento)
-   Leva 15 a 30 min.
+   Tempo: 15 a 30 min.
 4. **Está previsto?** (Engenheiro)
    Se sim, vai pro passo 6 (Registra a requisição) (regra R1). Se não, vai pro passo 5 (Aprova compra fora do orçamento) (regra R1).
 5. **Aprova compra fora do orçamento** (Diretor, WhatsApp)
-   Leva 1 a 2 dias parado. Não existe valor mínimo: até compra pequena passa pelo diretor.
+   Tempo: 1 a 2 dias parado. Não existe valor mínimo: até compra pequena passa pelo diretor.
 6. **Registra a requisição** (Compras, Planilha de compras)
-   Leva 10 min. Redigita o que veio no WhatsApp. A aprovação do diretor só é exigida quando a compra veio do passo 5.
+   Tempo: 10 min. Redigita o que veio no WhatsApp. A aprovação do diretor só é exigida quando a compra veio do passo 5.
 7. **Pede 3 cotações** (Compras, WhatsApp)
-   Leva 30 min. Mesma mensagem copiada pra cada fornecedor.
+   Tempo: 30 min. Mesma mensagem copiada pra cada fornecedor.
 8. **Responde a cotação** (Fornecedor, WhatsApp)
-   Leva 1 a 3 dias.
+   Tempo: 1 a 3 dias.
 9. **Escolhe e fecha o pedido** (Compras, Planilha de compras)
    Ninguém soube dizer o critério além do preço. Prazo e histórico do fornecedor pesam, mas não estão escritos.
 10. **Entrega na obra** (Fornecedor)

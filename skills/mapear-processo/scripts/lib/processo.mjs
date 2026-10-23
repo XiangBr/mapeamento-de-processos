@@ -99,18 +99,21 @@ function validar(p) {
 
 // ---------------------------------------------------------------- normalização
 
-const lista = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+const lista = (v) => (Array.isArray(v) ? v : v ? [v] : []).filter((x) => x !== "?");
+// "?" no JSON é o mesmo que campo vazio: aparece como pendente, não como respondido
+const valor = (v) => (v === "?" ? undefined : v);
 
 function normalizar(p) {
   const passos = p.passos.map((s, i) => ({
     ...s,
     n: i + 1,
     tipo: s.tipo || "tarefa",
+    pronto_quando: valor(s.pronto_quando),
     entradas: lista(s.entradas).map((it) =>
-      typeof it === "string" ? { item: it, minimo: [] } : { ...it, minimo: lista(it.minimo) }
+      typeof it === "string" ? { item: it, minimo: [] } : { ...it, formato: valor(it.formato), minimo: lista(it.minimo) }
     ),
     saidas: lista(s.saidas).map((it) =>
-      typeof it === "string" ? { item: it, campos: [] } : { ...it, campos: lista(it.campos) }
+      typeof it === "string" ? { item: it, campos: [] } : { ...it, formato: valor(it.formato), campos: lista(it.campos) }
     ),
     regras: [...lista(s.regras)],
     excecoes: lista(s.excecoes),
