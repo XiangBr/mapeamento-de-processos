@@ -1,0 +1,267 @@
+{
+  "nome": "Orçamento de móveis planejados",
+  "slug": "orcamento-marcenaria",
+  "objetivo": "Exemplo fictício. Transformar um pedido de orçamento em pedido fechado, com projeto e preço que a fábrica consegue cumprir.",
+  "dono": "Dono da marcenaria",
+  "gatilho": "Cliente pede orçamento pelo WhatsApp ou Instagram",
+  "resultado": "Pedido fechado, com sinal pago e projeto liberado pra produção",
+  "frequencia": "Cerca de 12 pedidos de orçamento por semana",
+  "diagnostico": "O processo funciona, mas depende de três coisas que não estão escritas: a tabela de preço de chapa, o critério de desconto e o motivo de perda. As três aparecem como lacuna e são justamente o que um agente precisaria pra calcular preço ou fazer follow-up.\n\nA informação do cliente é digitada três vezes (planilha de leads, Promob, Conta Azul) e não existe um código de orçamento que ligue as três. Antes de automatizar qualquer passo, vale criar esse código. Sem ele, um agente não sabe que a linha da planilha, o projeto e o contrato são do mesmo cliente.",
+  "responsaveis": ["Cliente", "Comercial", "Projetista", "Financeiro"],
+  "ferramentas": [
+    { "nome": "WhatsApp", "uso": "conversa com o cliente", "acesso": "manual", "obs": "WhatsApp comum no celular do comercial, sem API" },
+    { "nome": "Planilha de leads", "uso": "Google Sheets", "acesso": "api" },
+    { "nome": "Caderno", "uso": "anotação da medição", "acesso": "manual" },
+    { "nome": "Promob", "uso": "projeto 3D", "acesso": "exportacao", "obs": "exporta a lista de peças em CSV" },
+    { "nome": "Planilha de custos", "uso": "Excel do financeiro", "acesso": "nao-sei", "obs": "fica no computador do financeiro, não ficou claro se está na nuvem" },
+    { "nome": "Conta Azul", "uso": "contrato e cobrança", "acesso": "api" }
+  ],
+  "dados": [
+    {
+      "nome": "Lead",
+      "descricao": "Um cliente que pediu orçamento.",
+      "onde_fica": "Planilha de leads",
+      "dono": "Comercial",
+      "chave": "Telefone do cliente (não existe código de orçamento)",
+      "campos": [
+        { "nome": "nome", "obrigatorio": true },
+        { "nome": "telefone", "obrigatorio": true, "formato": "(41) 9xxxx-xxxx" },
+        { "nome": "ambiente", "obrigatorio": true, "exemplo": "cozinha, dormitório casal" },
+        { "nome": "bairro", "obrigatorio": false },
+        { "nome": "origem", "obrigatorio": false, "exemplo": "Instagram, indicação" },
+        { "nome": "status", "obrigatorio": true, "exemplo": "novo, medição marcada, proposta enviada, fechado, perdido" }
+      ]
+    },
+    {
+      "nome": "Lista de peças",
+      "descricao": "Saída do Promob com cada peça do projeto.",
+      "onde_fica": "Promob (exportada em CSV)",
+      "dono": "Projetista",
+      "chave": "Nome do arquivo do projeto",
+      "campos": [
+        { "nome": "peça", "obrigatorio": true },
+        { "nome": "material / cor da chapa", "obrigatorio": true, "exemplo": "MDF 18mm branco TX" },
+        { "nome": "largura x altura (mm)", "obrigatorio": true },
+        { "nome": "quantidade", "obrigatorio": true },
+        { "nome": "ferragens", "obrigatorio": false }
+      ]
+    }
+  ],
+  "regras": [
+    {
+      "id": "R1", "tipo": "validacao",
+      "regra": "Só agenda medição se o cliente informou ambiente e bairro, e o bairro está na área atendida.",
+      "passos": ["p3"], "fonte": "entrevista (comercial)", "status": "de-cabeca",
+      "exemplo": "Fora de Curitiba e região metropolitana não atende."
+    },
+    {
+      "id": "R2", "tipo": "calculo",
+      "regra": "Preço = custo das chapas pela tabela + ferragens + mão de obra por m² + margem.",
+      "passos": ["p6"], "fonte": "entrevista (financeiro)", "status": "de-cabeca"
+    },
+    {
+      "id": "R3", "tipo": "restricao",
+      "regra": "Margem mínima de 35% sobre o custo.",
+      "passos": ["p6"], "fonte": "entrevista (dono)", "status": "confirmada"
+    },
+    {
+      "id": "R4", "tipo": "permissao",
+      "regra": "Desconto acima de 5% só com aprovação do dono.",
+      "passos": ["p7"], "fonte": "entrevista (comercial)", "status": "lacuna",
+      "exemplo": "O comercial disse 5%, o dono disse 'depende do cliente'."
+    },
+    {
+      "id": "R5", "tipo": "decisao",
+      "regra": "Cliente pode pedir até 2 rodadas de ajuste sem custo. Da terceira em diante, cobra o projeto.",
+      "passos": ["p8"], "fonte": "contrato padrão, cláusula 4", "status": "confirmada"
+    },
+    {
+      "id": "R6", "tipo": "prazo",
+      "regra": "A proposta vale 15 dias. Depois disso o preço é recalculado.",
+      "passos": ["p7"], "fonte": "rodapé do PDF da proposta", "status": "confirmada"
+    },
+    {
+      "id": "R7", "tipo": "validacao",
+      "regra": "Só libera pra produção com sinal de 50% compensado na conta.",
+      "passos": ["p10"], "fonte": "entrevista (financeiro)", "status": "confirmada"
+    }
+  ],
+  "passos": [
+    {
+      "id": "p1", "tipo": "inicio", "responsavel": "Cliente",
+      "titulo": "Pede orçamento", "ferramenta": "WhatsApp",
+      "saidas": [
+        { "item": "Mensagem do cliente", "formato": "texto livre no WhatsApp", "campos": ["o que quer", "às vezes fotos do ambiente"] }
+      ],
+      "proximo": [{ "para": "p2" }]
+    },
+    {
+      "id": "p2", "tipo": "tarefa", "responsavel": "Comercial",
+      "titulo": "Registra o contato", "ferramenta": "Planilha de leads",
+      "entradas": [
+        { "item": "Mensagem do cliente", "formato": "texto livre no WhatsApp", "minimo": ["nome", "telefone", "ambiente"], "se_faltar": "pergunta de volta no WhatsApp antes de registrar" }
+      ],
+      "saidas": [
+        { "item": "Lead na planilha", "dado": "Lead", "formato": "linha no Google Sheets", "campos": ["nome", "telefone", "ambiente", "bairro", "origem", "status = novo"] }
+      ],
+      "pronto_quando": "A linha existe com nome, telefone, ambiente e status 'novo'.",
+      "tempo": "5 min", "marcadores": ["automacao"],
+      "nota": "Copia e cola na mão. Às vezes esquece e o lead some.",
+      "proximo": [{ "para": "p3" }]
+    },
+    {
+      "id": "p3", "tipo": "tarefa", "responsavel": "Comercial",
+      "titulo": "Agenda a medição", "ferramenta": "WhatsApp",
+      "entradas": [
+        { "item": "Lead na planilha", "dado": "Lead", "formato": "linha no Google Sheets", "minimo": ["telefone", "ambiente", "bairro"] },
+        { "item": "Agenda do projetista", "de": "Projetista, por mensagem", "formato": "mensagem no WhatsApp", "minimo": ["dias e horários livres na semana"], "se_faltar": "manda mensagem pro projetista e espera" }
+      ],
+      "saidas": [
+        { "item": "Visita marcada", "formato": "mensagem no WhatsApp + status na planilha", "campos": ["endereço completo", "data e hora", "status = medição marcada"] }
+      ],
+      "pronto_quando": "Cliente confirmou data, hora e endereço por escrito.",
+      "excecoes": [
+        { "quando": "Bairro fora da área atendida", "faz": "avisa o cliente que não atende e marca como perdido" },
+        { "quando": "Cliente some no meio da conversa", "faz": "não tem regra. Às vezes alguém cobra, às vezes não" }
+      ],
+      "tempo": "1 a 3 dias de troca de mensagem", "marcadores": ["dor"],
+      "nota": "A troca de mensagem pra achar horário leva até 3 dias.",
+      "proximo": [{ "para": "p4" }]
+    },
+    {
+      "id": "p4", "tipo": "tarefa", "responsavel": "Projetista",
+      "titulo": "Mede o ambiente", "ferramenta": "Caderno",
+      "entradas": [
+        { "item": "Visita marcada", "formato": "mensagem no WhatsApp", "minimo": ["endereço completo", "data e hora"] }
+      ],
+      "saidas": [
+        { "item": "Medidas do ambiente", "formato": "anotação à mão no caderno", "campos": ["paredes", "pé-direito", "pontos de água e luz", "janelas e portas"] },
+        { "item": "Preferências do cliente", "formato": "anotação à mão + fotos no celular", "campos": ["cor", "puxador", "o que vai guardar"] }
+      ],
+      "pronto_quando": "Todas as paredes do ambiente medidas, com pontos de água e luz marcados.",
+      "tempo": "1h30 no local",
+      "proximo": [{ "para": "p5" }]
+    },
+    {
+      "id": "p5", "tipo": "tarefa", "responsavel": "Projetista",
+      "titulo": "Desenha o projeto", "ferramenta": "Promob",
+      "entradas": [
+        { "item": "Medidas do ambiente", "formato": "anotação à mão no caderno", "minimo": ["paredes", "pé-direito", "pontos de água e luz"], "se_faltar": "liga pro cliente e pede foto com trena, ou volta no local" },
+        { "item": "Preferências do cliente", "formato": "anotação + fotos", "minimo": ["cor"] },
+        { "item": "Pedido de ajuste", "formato": "mensagem no WhatsApp", "minimo": ["o que mudar"] }
+      ],
+      "saidas": [
+        { "item": "Projeto 3D", "formato": "arquivo Promob + imagens renderizadas" },
+        { "item": "Lista de peças", "dado": "Lista de peças", "formato": "CSV exportado do Promob", "campos": ["peça", "material / cor da chapa", "medidas", "quantidade", "ferragens"] }
+      ],
+      "pronto_quando": "Projeto renderizado e lista de peças exportada.",
+      "depende_de": ["Medidas passadas do caderno pro computador"],
+      "tempo": "1 a 2 dias",
+      "nota": "Na primeira vez entra sem pedido de ajuste. O pedido de ajuste só existe quando o cliente volta do passo 8.",
+      "proximo": [{ "para": "p6" }]
+    },
+    {
+      "id": "p6", "tipo": "tarefa", "responsavel": "Financeiro",
+      "titulo": "Calcula o preço", "ferramenta": "Planilha de custos",
+      "entradas": [
+        { "item": "Lista de peças", "dado": "Lista de peças", "formato": "CSV exportado do Promob", "minimo": ["material / cor da chapa", "medidas", "quantidade"], "se_faltar": "devolve pro projetista" },
+        { "item": "Tabela de preço de chapa", "de": "Fornecedor de chapa, PDF por e-mail", "formato": "PDF", "minimo": ["preço por chapa de cada material e cor"], "se_faltar": "usa a última tabela que tiver" }
+      ],
+      "saidas": [
+        { "item": "Preço final", "formato": "valor na planilha de custos", "campos": ["custo", "margem", "preço à vista", "preço parcelado"] }
+      ],
+      "tempo": "?", "marcadores": ["lacuna", "automacao"],
+      "nota": "Ninguém soube dizer com que frequência a tabela de chapa é atualizada, nem quanto tempo o cálculo leva.",
+      "proximo": [{ "para": "p7" }]
+    },
+    {
+      "id": "p7", "tipo": "tarefa", "responsavel": "Comercial",
+      "titulo": "Apresenta a proposta", "ferramenta": "WhatsApp",
+      "entradas": [
+        { "item": "Projeto 3D", "formato": "imagens renderizadas", "minimo": ["imagens de todos os ambientes orçados"] },
+        { "item": "Preço final", "formato": "valor na planilha de custos", "minimo": ["preço à vista", "preço parcelado"] }
+      ],
+      "saidas": [
+        { "item": "Proposta em PDF", "formato": "PDF pelo WhatsApp", "campos": ["imagens", "descrição dos móveis", "preço", "condições", "validade de 15 dias"] }
+      ],
+      "pronto_quando": "PDF enviado e cliente visualizou.",
+      "proximo": [{ "para": "p8" }]
+    },
+    {
+      "id": "p8", "tipo": "decisao", "responsavel": "Cliente",
+      "titulo": "Aprova?",
+      "entradas": [
+        { "item": "Proposta em PDF", "formato": "PDF pelo WhatsApp", "minimo": ["preço", "imagens"] }
+      ],
+      "saidas": [
+        { "item": "Proposta aprovada", "formato": "mensagem no WhatsApp" },
+        { "item": "Pedido de ajuste", "formato": "mensagem no WhatsApp" }
+      ],
+      "proximo": [
+        { "para": "p9", "rotulo": "sim" },
+        { "para": "p5", "rotulo": "pede ajuste", "regra": "R5" },
+        { "para": "p11", "rotulo": "não" }
+      ]
+    },
+    {
+      "id": "p9", "tipo": "tarefa", "responsavel": "Financeiro",
+      "titulo": "Emite contrato e cobra o sinal", "ferramenta": "Conta Azul",
+      "entradas": [
+        { "item": "Proposta aprovada", "formato": "mensagem no WhatsApp", "minimo": ["valor fechado", "forma de pagamento"] },
+        { "item": "Dados do cliente pro contrato", "de": "Cliente, pedidos por WhatsApp", "formato": "mensagem no WhatsApp", "minimo": ["nome completo", "CPF", "endereço da obra"], "se_faltar": "não emite o contrato" }
+      ],
+      "saidas": [
+        { "item": "Contrato assinado", "para": "Pasta do cliente no Drive", "formato": "PDF assinado" },
+        { "item": "Sinal pago", "formato": "pagamento compensado no Conta Azul", "campos": ["valor", "data"] }
+      ],
+      "pronto_quando": "Contrato assinado pelas duas partes e boleto do sinal emitido.",
+      "tempo": "1 dia", "marcadores": ["dor"],
+      "nota": "Redigita no Conta Azul os dados do cliente que já estavam na planilha de leads.",
+      "proximo": [{ "para": "p10" }]
+    },
+    {
+      "id": "p10", "tipo": "fim", "responsavel": "Projetista",
+      "titulo": "Libera pra produção", "ferramenta": "Promob",
+      "entradas": [
+        { "item": "Sinal pago", "formato": "pagamento compensado no Conta Azul", "minimo": ["50% do valor compensado"] },
+        { "item": "Projeto 3D", "formato": "arquivo Promob", "minimo": ["versão aprovada pelo cliente"] }
+      ],
+      "saidas": [{ "item": "Plano de corte", "para": "Fábrica", "formato": "arquivo gerado pelo Promob" }],
+      "pronto_quando": "Plano de corte entregue pra fábrica."
+    },
+    {
+      "id": "p11", "tipo": "fim", "responsavel": "Comercial",
+      "titulo": "Marca como perdido", "ferramenta": "Planilha de leads",
+      "pronto_quando": "Status 'perdido' na planilha.",
+      "marcadores": ["lacuna"],
+      "nota": "O motivo da perda não é registrado."
+    }
+  ],
+  "lacunas": [
+    { "pergunta": "Com que frequência a tabela de preço de chapa é atualizada, e por quem?", "quem_sabe": "financeiro", "passo": "p6" },
+    { "pergunta": "Quanto tempo leva o cálculo de preço, e como se sabe que ele está certo?", "quem_sabe": "financeiro", "passo": "p6" },
+    { "pergunta": "Qual o limite real de desconto sem falar com o dono? O comercial diz 5%, o dono diz 'depende'.", "quem_sabe": "dono", "passo": "p7" },
+    { "pergunta": "Por que o cliente desiste? Não há registro do motivo.", "quem_sabe": "comercial", "passo": "p11" },
+    { "pergunta": "A planilha de custos está na nuvem ou só no computador do financeiro?", "quem_sabe": "financeiro" }
+  ],
+  "candidatos_automacao": [
+    {
+      "passo": "p2",
+      "ideia": "Agente lê a primeira mensagem e cria o lead na planilha",
+      "por_que": "É cópia manual, e quando falha o cliente some.",
+      "precisa_antes": "Um número de WhatsApp com API (o atual é o celular do comercial). Sem isso o agente não lê a mensagem.",
+      "revisao": "Comercial confere a planilha no fim do dia"
+    },
+    {
+      "passo": "p6",
+      "ideia": "Cálculo de preço a partir da lista de peças exportada do Promob",
+      "por_que": "O projeto já gera a lista de peças em CSV, e o cálculo é repetitivo.",
+      "precisa_antes": "Alguém ser dono da tabela de preço de chapa e a fórmula (R2) ser escrita. Sem isso, o agente calcula rápido com o preço errado.",
+      "revisao": "Financeiro aprova o preço antes de ir pro comercial"
+    }
+  ],
+  "fontes": [
+    "Entrevista com o dono e o comercial (fictícia)",
+    "Modelo de contrato, cláusula 4 (fictício)"
+  ]
+}

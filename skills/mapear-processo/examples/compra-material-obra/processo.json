@@ -1,0 +1,236 @@
+{
+  "nome": "Compra de material para a obra",
+  "slug": "compra-material-obra",
+  "objetivo": "Exemplo fictício. Fazer o material certo chegar na obra antes de faltar, pelo preço combinado e com a nota fiscal no financeiro.",
+  "dono": "Engenheiro responsável pelas obras",
+  "gatilho": "O mestre de obras percebe que um material vai faltar",
+  "resultado": "Material conferido na obra e fornecedor pago",
+  "frequencia": "Cerca de 15 pedidos por semana, somando 3 obras",
+  "diagnostico": "O pedido nasce num áudio sem quantidade nem especificação, e essa imprecisão atravessa o processo inteiro: o engenheiro liga de volta pra confirmar, compras redigita, e na entrega o mestre não tem o pedido fechado pra conferir. O problema começa no primeiro passo, não na cotação.\n\nDuas regras seguram o processo e nenhuma está escrita: quando a compra fora do orçamento precisa do diretor (hoje, sempre) e como se escolhe o fornecedor além do preço. A primeira trava a compra por até 2 dias. A segunda impede qualquer automação da cotação, porque sem ela um agente só sabe escolher o mais barato.",
+  "responsaveis": ["Mestre de obras", "Engenheiro", "Diretor", "Compras", "Fornecedor", "Financeiro"],
+  "ferramentas": [
+    { "nome": "WhatsApp", "uso": "pedidos, aprovações e cotações", "acesso": "manual" },
+    { "nome": "Planilha de orçamento", "uso": "custo previsto de cada obra", "acesso": "exportacao", "obs": "Excel no Drive" },
+    { "nome": "Planilha de compras", "uso": "Google Sheets de compras", "acesso": "api" },
+    { "nome": "ERP", "uso": "notas fiscais e pagamentos", "acesso": "nao-sei" }
+  ],
+  "dados": [
+    {
+      "nome": "Requisição de compra",
+      "descricao": "O que a obra precisa, já conferido pelo engenheiro.",
+      "onde_fica": "Planilha de compras",
+      "dono": "Compras",
+      "chave": "Obra + data (não tem número de requisição)",
+      "campos": [
+        { "nome": "obra", "obrigatorio": true },
+        { "nome": "material", "obrigatorio": true, "exemplo": "cimento CP-II 50kg" },
+        { "nome": "quantidade e unidade", "obrigatorio": true, "exemplo": "40 sacos" },
+        { "nome": "data limite na obra", "obrigatorio": true },
+        { "nome": "previsto no orçamento", "obrigatorio": true, "formato": "sim / não" }
+      ]
+    }
+  ],
+  "regras": [
+    {
+      "id": "R1", "tipo": "decisao",
+      "regra": "Material e quantidade que estão na planilha de orçamento da obra contam como previstos. O resto é fora do orçamento.",
+      "passos": ["p4"], "fonte": "entrevista (engenheiro)", "status": "confirmada"
+    },
+    {
+      "id": "R2", "tipo": "permissao",
+      "regra": "Toda compra fora do orçamento passa pelo diretor, sem valor mínimo.",
+      "passos": ["p5"], "fonte": "entrevista (engenheiro)", "status": "de-cabeca",
+      "exemplo": "Até 10 sacos de argamassa esperaram 2 dias."
+    },
+    {
+      "id": "R3", "tipo": "validacao",
+      "regra": "Toda compra precisa de 3 cotações.",
+      "passos": ["p7"], "fonte": "entrevista (compras)", "status": "confirmada"
+    },
+    {
+      "id": "R4", "tipo": "decisao",
+      "regra": "Escolhe o fornecedor pelo preço, pesando prazo e histórico de entrega.",
+      "passos": ["p9"], "fonte": "entrevista (compras)", "status": "lacuna",
+      "exemplo": "Ninguém soube dizer quanto o prazo pesa contra o preço."
+    },
+    {
+      "id": "R5", "tipo": "decisao",
+      "regra": "A entrega bate quando material, quantidade e especificação da nota são iguais aos do pedido fechado.",
+      "passos": ["p11"], "fonte": "entrevista (mestre de obras)", "status": "confirmada"
+    }
+  ],
+  "passos": [
+    {
+      "id": "p1", "tipo": "inicio", "responsavel": "Mestre de obras",
+      "titulo": "Vê que vai faltar material",
+      "saidas": [{ "item": "O que falta", "formato": "de cabeça" }],
+      "proximo": [{ "para": "p2" }]
+    },
+    {
+      "id": "p2", "tipo": "tarefa", "responsavel": "Mestre de obras",
+      "titulo": "Pede por áudio", "ferramenta": "WhatsApp",
+      "entradas": [{ "item": "O que falta", "formato": "de cabeça", "minimo": ["material", "obra"] }],
+      "saidas": [{ "item": "Áudio com o pedido", "formato": "áudio no WhatsApp", "campos": ["material", "às vezes quantidade", "obra"] }],
+      "pronto_quando": "Áudio enviado no grupo da obra.",
+      "marcadores": ["dor", "automacao"],
+      "nota": "Áudio sem quantidade exata nem especificação. O engenheiro liga de volta pra confirmar.",
+      "proximo": [{ "para": "p3" }]
+    },
+    {
+      "id": "p3", "tipo": "tarefa", "responsavel": "Engenheiro",
+      "titulo": "Confere com o orçamento", "ferramenta": "Planilha de orçamento",
+      "entradas": [
+        { "item": "Áudio com o pedido", "formato": "áudio no WhatsApp", "minimo": ["material", "quantidade", "obra"], "se_faltar": "liga pro mestre" },
+        { "item": "Orçamento da obra", "de": "Planilha de orçamento (feita no início da obra)", "formato": "Excel", "minimo": ["material", "quantidade prevista", "quantidade já comprada"] }
+      ],
+      "saidas": [{ "item": "Lista de material com quantidade", "dado": "Requisição de compra", "formato": "mensagem no WhatsApp", "campos": ["obra", "material", "quantidade e unidade", "data limite"] }],
+      "pronto_quando": "Cada item tem material, quantidade com unidade e obra.",
+      "tempo": "15 a 30 min",
+      "proximo": [{ "para": "p4" }]
+    },
+    {
+      "id": "p4", "tipo": "decisao", "responsavel": "Engenheiro",
+      "titulo": "Está previsto?",
+      "entradas": [{ "item": "Lista de material com quantidade", "formato": "mensagem no WhatsApp", "minimo": ["material", "quantidade"] }],
+      "proximo": [
+        { "para": "p6", "rotulo": "sim", "regra": "R1" },
+        { "para": "p5", "rotulo": "não", "regra": "R1" }
+      ]
+    },
+    {
+      "id": "p5", "tipo": "espera", "responsavel": "Diretor",
+      "titulo": "Aprova compra fora do orçamento", "ferramenta": "WhatsApp",
+      "entradas": [{ "item": "Lista de material com quantidade", "formato": "mensagem no WhatsApp", "minimo": ["material", "quantidade", "obra", "por que não estava previsto"] }],
+      "saidas": [{ "item": "Aprovação do diretor", "formato": "mensagem no WhatsApp", "para": "p6" }],
+      "pronto_quando": "Diretor respondeu 'ok' na conversa.",
+      "tempo": "1 a 2 dias parado", "marcadores": ["dor", "lacuna"],
+      "nota": "Não existe valor mínimo: até compra pequena passa pelo diretor.",
+      "proximo": [{ "para": "p6" }]
+    },
+    {
+      "id": "p6", "tipo": "tarefa", "responsavel": "Compras",
+      "titulo": "Registra a requisição", "ferramenta": "Planilha de compras",
+      "entradas": [
+        { "item": "Lista de material com quantidade", "formato": "mensagem no WhatsApp", "minimo": ["obra", "material", "quantidade e unidade"], "se_faltar": "pergunta pro engenheiro" },
+        { "item": "Aprovação do diretor", "formato": "mensagem no WhatsApp", "minimo": ["ok do diretor"] }
+      ],
+      "saidas": [{ "item": "Requisição na planilha", "dado": "Requisição de compra", "formato": "linha no Google Sheets", "campos": ["obra", "material", "quantidade e unidade", "data limite", "previsto no orçamento"] }],
+      "pronto_quando": "Linha criada com todos os campos obrigatórios.",
+      "tempo": "10 min", "marcadores": ["automacao"],
+      "nota": "Redigita o que veio no WhatsApp. A aprovação do diretor só é exigida quando a compra veio do passo 5.",
+      "proximo": [{ "para": "p7" }]
+    },
+    {
+      "id": "p7", "tipo": "tarefa", "responsavel": "Compras",
+      "titulo": "Pede 3 cotações", "ferramenta": "WhatsApp",
+      "entradas": [
+        { "item": "Requisição na planilha", "dado": "Requisição de compra", "formato": "linha no Google Sheets", "minimo": ["material", "quantidade e unidade", "data limite", "endereço da obra"] },
+        { "item": "Fornecedores da categoria", "de": "Contatos no celular de compras", "formato": "de cabeça", "minimo": ["3 fornecedores que vendem o material"], "se_faltar": "pergunta pro engenheiro quem indicar" }
+      ],
+      "saidas": [{ "item": "Pedido de cotação", "formato": "mensagem no WhatsApp", "campos": ["material", "quantidade", "endereço de entrega", "prazo desejado"] }],
+      "pronto_quando": "Mensagem enviada pra 3 fornecedores.",
+      "tempo": "30 min", "marcadores": ["automacao"],
+      "nota": "Mesma mensagem copiada pra cada fornecedor.",
+      "proximo": [{ "para": "p8" }]
+    },
+    {
+      "id": "p8", "tipo": "espera", "responsavel": "Fornecedor",
+      "titulo": "Responde a cotação", "ferramenta": "WhatsApp",
+      "entradas": [{ "item": "Pedido de cotação", "formato": "mensagem no WhatsApp", "minimo": ["material", "quantidade", "endereço de entrega"] }],
+      "saidas": [{ "item": "Preço e prazo", "formato": "mensagem ou PDF no WhatsApp", "campos": ["preço unitário", "frete", "prazo de entrega", "condição de pagamento"] }],
+      "pronto_quando": "3 respostas recebidas, ou passou o prazo combinado.",
+      "tempo": "1 a 3 dias",
+      "excecoes": [{ "quando": "Fornecedor não responde", "faz": "compras cobra por mensagem. Não tem prazo pra desistir dele" }],
+      "proximo": [{ "para": "p9" }]
+    },
+    {
+      "id": "p9", "tipo": "tarefa", "responsavel": "Compras",
+      "titulo": "Escolhe e fecha o pedido", "ferramenta": "Planilha de compras",
+      "entradas": [{ "item": "Preço e prazo", "formato": "mensagem ou PDF no WhatsApp", "minimo": ["preço unitário", "frete", "prazo de entrega"] }],
+      "saidas": [{ "item": "Pedido fechado", "formato": "mensagem pro fornecedor + linha atualizada na planilha", "campos": ["fornecedor", "preço total", "data de entrega"] }],
+      "pronto_quando": "Fornecedor confirmou o pedido e a data de entrega.",
+      "marcadores": ["lacuna"],
+      "nota": "Ninguém soube dizer o critério além do preço. Prazo e histórico do fornecedor pesam, mas não estão escritos.",
+      "proximo": [{ "para": "p10" }]
+    },
+    {
+      "id": "p10", "tipo": "tarefa", "responsavel": "Fornecedor",
+      "titulo": "Entrega na obra",
+      "entradas": [{ "item": "Pedido fechado", "formato": "mensagem no WhatsApp", "minimo": ["material", "quantidade", "endereço", "data"] }],
+      "saidas": [
+        { "item": "Material entregue", "formato": "físico, no canteiro" },
+        { "item": "Nota fiscal em papel", "formato": "papel, com o motorista", "campos": ["fornecedor", "itens", "valores"] }
+      ],
+      "pronto_quando": "Material descarregado e nota entregue pro mestre.",
+      "proximo": [{ "para": "p11" }]
+    },
+    {
+      "id": "p11", "tipo": "decisao", "responsavel": "Mestre de obras",
+      "titulo": "Bate com o pedido?",
+      "entradas": [
+        { "item": "Material entregue", "formato": "físico, no canteiro", "minimo": ["quantidade contada"] },
+        { "item": "Nota fiscal em papel", "formato": "papel", "minimo": ["itens", "quantidades"] }
+      ],
+      "depende_de": ["Mestre saber o que foi pedido. Hoje ele não vê o pedido fechado."],
+      "marcadores": ["dor"],
+      "nota": "O mestre confere pela nota, porque não tem o pedido fechado na mão.",
+      "proximo": [
+        { "para": "p13", "rotulo": "sim", "regra": "R5" },
+        { "para": "p12", "rotulo": "não", "regra": "R5" }
+      ]
+    },
+    {
+      "id": "p12", "tipo": "tarefa", "responsavel": "Mestre de obras",
+      "titulo": "Avisa compras", "ferramenta": "WhatsApp",
+      "saidas": [{ "item": "Foto do problema", "para": "Compras, que cobra o fornecedor", "formato": "foto no WhatsApp" }],
+      "pronto_quando": "Compras confirmou que viu.",
+      "proximo": [{ "para": "p10", "rotulo": "reentrega" }]
+    },
+    {
+      "id": "p13", "tipo": "tarefa", "responsavel": "Financeiro",
+      "titulo": "Lança a nota fiscal", "ferramenta": "ERP",
+      "entradas": [{ "item": "Nota fiscal em papel", "formato": "papel, trazida do canteiro", "minimo": ["fornecedor", "itens", "valor", "vencimento"], "se_faltar": "liga pro mestre procurar a nota" }],
+      "saidas": [{ "item": "Conta a pagar", "formato": "lançamento no ERP", "campos": ["fornecedor", "valor", "vencimento", "obra"] }],
+      "pronto_quando": "Conta a pagar lançada com vencimento e obra.",
+      "depende_de": ["A nota chegar do canteiro até o escritório"],
+      "marcadores": ["dor", "automacao"],
+      "nota": "A nota vem em papel com o motorista e às vezes se perde no canteiro.",
+      "proximo": [{ "para": "p14" }]
+    },
+    {
+      "id": "p14", "tipo": "fim", "responsavel": "Financeiro",
+      "titulo": "Paga o fornecedor", "ferramenta": "ERP",
+      "entradas": [{ "item": "Conta a pagar", "formato": "lançamento no ERP", "minimo": ["valor", "vencimento"] }],
+      "pronto_quando": "Pagamento feito no vencimento."
+    }
+  ],
+  "lacunas": [
+    { "pergunta": "Qual o critério pra escolher o fornecedor além do preço?", "quem_sabe": "compras e engenheiro", "passo": "p9" },
+    { "pergunta": "Existe um valor abaixo do qual a compra fora do orçamento não precisa do diretor?", "quem_sabe": "diretor", "passo": "p5" },
+    { "pergunta": "Quantas entregas por mês chegam erradas?", "quem_sabe": "mestre de obras", "passo": "p11" },
+    { "pergunta": "O ERP tem API ou importa XML de nota fiscal?", "quem_sabe": "financeiro" }
+  ],
+  "candidatos_automacao": [
+    {
+      "passo": "p2",
+      "ideia": "Agente ouve o áudio do mestre e devolve a requisição pronta: material, quantidade e obra",
+      "por_que": "O áudio é a origem da imprecisão que atravessa o processo.",
+      "precisa_antes": "Uma lista padrão dos materiais mais pedidos, com o nome que a obra usa, e um número de WhatsApp com API.",
+      "revisao": "Engenheiro confirma a requisição antes de ir pra compras"
+    },
+    {
+      "passo": "p7",
+      "ideia": "Agente manda a cotação pros fornecedores da categoria e junta as respostas numa tabela",
+      "por_que": "É a mesma mensagem copiada três vezes, e as respostas chegam em formatos diferentes.",
+      "precisa_antes": "Cadastro de fornecedores por categoria e o critério de escolha (R4) escrito. Sem isso o agente só sabe escolher o mais barato.",
+      "revisao": "Compras escolhe o fornecedor a partir da tabela"
+    },
+    {
+      "passo": "p13",
+      "ideia": "Lançar a nota a partir do XML que o fornecedor manda por e-mail e conferir com o pedido",
+      "por_que": "A nota em papel se perde, e o XML tem os mesmos dados sem digitação.",
+      "precisa_antes": "Pedir pra todo fornecedor mandar o XML da nota por e-mail, e descobrir se o ERP importa XML.",
+      "revisao": "Financeiro confere o lançamento antes de pagar"
+    }
+  ]
+}
